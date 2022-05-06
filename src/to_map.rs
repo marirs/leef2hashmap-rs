@@ -99,8 +99,7 @@ fn leef_to_map(leef_str: &str, preserve_orig: bool) -> Result<HashMap<String, St
 /// Parse the given leef string to a struct of fields
 /// which will further be used for forming the map with ease
 fn parse_leef_line(s: &str) -> Result<LeefLine> {
-    if !s.to_lowercase().contains("leef:0|")
-        && !s.to_lowercase().contains("leef:1.0|")
+    if !s.to_lowercase().contains("leef:1.0|")
         && !s.to_lowercase().contains("leef:2.0|")
     {
         // if we dont have the leef and version, then we are
