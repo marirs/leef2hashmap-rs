@@ -1,4 +1,8 @@
 # LEEF to HashMap
+[![Linux Arm7](https://github.com/marirs/cef2hashmap-rs/actions/workflows/linux_arm.yml/badge.svg)](https://github.com/marirs/cef2hashmap-rs/actions/workflows/linux_arm.yml)
+[![Linux x86_64](https://github.com/marirs/cef2hashmap-rs/actions/workflows/linux_x86_64.yml/badge.svg)](https://github.com/marirs/cef2hashmap-rs/actions/workflows/linux_x86_64.yml)
+[![macOS](https://github.com/marirs/cef2hashmap-rs/actions/workflows/macos.yml/badge.svg)](https://github.com/marirs/cef2hashmap-rs/actions/workflows/macos.yml)
+[![Windows](https://github.com/marirs/cef2hashmap-rs/actions/workflows/windows.yml/badge.svg)](https://github.com/marirs/cef2hashmap-rs/actions/workflows/windows.yml)
 
 Convert a syslog LEEF string or a regular LEEF string to a HashMap object.
 
