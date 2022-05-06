@@ -244,7 +244,6 @@ fn parse_leef_event_attributes(s: &str, delim: Option<&str>) -> HashMap<String, 
             .collect::<HashMap<String, String>>();
     } else if let Some(delim) = delim {
         // contains a delim
-        println!(">> delimed");
         let attrs = s.split(delim).collect::<Vec<&str>>();
         map = attrs
             .iter()
@@ -252,7 +251,6 @@ fn parse_leef_event_attributes(s: &str, delim: Option<&str>) -> HashMap<String, 
             .collect::<HashMap<String, String>>();
     } else {
         // Mostly contains only a space between the KV pairs
-        println!(">> spaced");
         let split_by_equalto = split_with_escaped(s.trim(), &'=');
         let mut key = "".to_string();
         // go over to take before the last as last is the key
