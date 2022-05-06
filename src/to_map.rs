@@ -75,10 +75,16 @@ fn leef_to_map(leef_str: &str, preserve_orig: bool) -> Result<HashMap<String, St
     }
     if !parsed.leef_event_attributes.is_empty() {
         // get the leef event attributes
-        if let Some(delim) =  parsed.leef_header.get("delimiter") {
-            map.extend(parse_leef_event_attributes(&parsed.leef_event_attributes, Some(delim)));
+        if let Some(delim) = parsed.leef_header.get("delimiter") {
+            map.extend(parse_leef_event_attributes(
+                &parsed.leef_event_attributes,
+                Some(delim),
+            ));
         } else {
-            map.extend(parse_leef_event_attributes(&parsed.leef_event_attributes, None));
+            map.extend(parse_leef_event_attributes(
+                &parsed.leef_event_attributes,
+                None,
+            ));
         }
     }
     if preserve_orig {
@@ -225,22 +231,20 @@ fn parse_leef_event_attributes(s: &str, delim: Option<&str>) -> HashMap<String, 
     if s.contains('\t') || s.contains("\\t") {
         println!(">> tabbed");
         // default LEEF contains a tab as delim (if delim is not specified)
-        let mut attrs= s.split('\t').collect::<Vec<&str>>();
-        if !attrs.len().gt(&1){
+        let mut attrs = s.split('\t').collect::<Vec<&str>>();
+        if !attrs.len().gt(&1) {
             attrs = s.split("\\t").collect::<Vec<&str>>();
         }
         map = attrs
             .iter()
-            .map(|x|{
-                let kv = x.splitn(2,'=')
-                    .collect::<Vec<&str>>();
+            .map(|x| {
+                let kv = x.splitn(2, '=').collect::<Vec<&str>>();
                 (kv[0].to_string(), kv[1].to_string())
             })
             .collect::<HashMap<String, String>>();
     } else if delim.is_some() {
         // contains a delim
         println!(">> delimed");
-
     } else {
         // Mostly contains only a space between the KV pairs
         println!(">> spaced");
