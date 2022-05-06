@@ -1,12 +1,13 @@
 use crate::{Error, Result};
 use std::collections::HashMap;
 
-const LEEF_HEADERS: [&str; 5] = [
+const LEEF_HEADERS: [&str; 6] = [
     "deviceVendor",
     "deviceProduct",
     "deviceVersion",
     "eventId",
     "delimiter",
+    "extra_field",
 ];
 
 #[derive(Clone, Debug, Default)]
@@ -17,6 +18,7 @@ struct LeefLine {
     ahost: Option<String>,
     leef_header: HashMap<String, String>,
     leef_event_attributes: String,
+    leef_header_event_attributes: HashMap<String, String>,
 }
 
 /// A Simple LEEF Parser to a Standardised HashMap
@@ -92,16 +94,19 @@ fn leef_to_map(leef_str: &str, preserve_orig: bool) -> Result<HashMap<String, St
         // Preserve the raw log leef str
         map.insert("rawEvent".to_string(), leef_str.trim().to_string());
     }
+    if !parsed.leef_header_event_attributes.is_empty() {
+        map.extend(parsed.leef_header_event_attributes)
+    }
 
+    // Not a required key for final hashmap
+    map.remove("delimiter");
     Ok(map)
 }
 
 /// Parse the given leef string to a struct of fields
 /// which will further be used for forming the map with ease
 fn parse_leef_line(s: &str) -> Result<LeefLine> {
-    if !s.to_lowercase().contains("leef:1.0|")
-        && !s.to_lowercase().contains("leef:2.0|")
-    {
+    if !s.to_lowercase().contains("leef:1.0|") && !s.to_lowercase().contains("leef:2.0|") {
         // if we dont have the leef and version, then we are
         // not dealing with a leef string
         return Err(Error::NotLeef);
@@ -134,8 +139,6 @@ fn parse_leef_line(s: &str) -> Result<LeefLine> {
         .zip(header.into_iter())
         .collect();
 
-    println!("header: {:?}", res);
-
     // form the leef event attributes
     res.leef_event_attributes = arr
         .last()
@@ -144,6 +147,22 @@ fn parse_leef_line(s: &str) -> Result<LeefLine> {
         .take(2)
         .collect::<Vec<_>>()[0]
         .to_string();
+
+    // make corrections with leef, differently formatted headers
+    // 1) found key value in delimiter field
+    if let Some(delim) = res.leef_header.get("delimiter") {
+        if delim.contains('=') {
+            res.leef_header_event_attributes.extend(convert_to_kv(delim, "="));
+            res.leef_header.remove("delimiter");
+        }
+    }
+    // 2) found another extra field (non-standard leef) with key=value perhaps
+    if let Some(extra) = res.leef_header.get("extra_field") {
+        if extra.contains('=') {
+            res.leef_header_event_attributes.extend(convert_to_kv(extra, "="));
+            res.leef_header.remove("extra_field");
+        }
+    }
 
     // we mostly have syslog information
     if arr.len().eq(&2) {
@@ -209,42 +228,28 @@ fn parse_leef_line(s: &str) -> Result<LeefLine> {
     Ok(res)
 }
 
-fn split_with_escaped<'a>(s: &'a str, ch: &char) -> Vec<&'a str> {
-    let mut res = vec![];
-    let mut offset = 0;
-    for i in 0..s.len() {
-        if s.as_bytes()[i] == *ch as u8 {
-            if i > 0 && s.as_bytes()[i - 1] == b'\\' {
-                continue;
-            }
-            res.push(&s[offset..i]);
-            offset = i + 1;
-        }
-    }
-    res.push(&s[offset..]);
-    res
-}
-
 /// Parse the LEEF Event Attributes
 fn parse_leef_event_attributes(s: &str, delim: Option<&str>) -> HashMap<String, String> {
     let mut map = HashMap::new();
     if s.contains('\t') || s.contains("\\t") {
-        println!(">> tabbed");
         // default LEEF contains a tab as delim (if delim is not specified)
         let mut attrs = s.split('\t').collect::<Vec<&str>>();
         if !attrs.len().gt(&1) {
+            // Not \t but has \\t
             attrs = s.split("\\t").collect::<Vec<&str>>();
         }
         map = attrs
             .iter()
-            .map(|x| {
-                let kv = x.splitn(2, '=').collect::<Vec<&str>>();
-                (kv[0].to_string(), kv[1].to_string())
-            })
+            .flat_map(|x| convert_to_kv(x, "="))
             .collect::<HashMap<String, String>>();
-    } else if delim.is_some() {
+    } else if let Some(delim) = delim {
         // contains a delim
         println!(">> delimed");
+        let attrs = s.split(delim).collect::<Vec<&str>>();
+        map = attrs
+            .iter()
+            .flat_map(|x| convert_to_kv(x, "="))
+            .collect::<HashMap<String, String>>();
     } else {
         // Mostly contains only a space between the KV pairs
         println!(">> spaced");
@@ -282,6 +287,27 @@ fn parse_leef_event_attributes(s: &str, delim: Option<&str>) -> HashMap<String, 
         }
     }
     map
+}
+
+fn split_with_escaped<'a>(s: &'a str, ch: &char) -> Vec<&'a str> {
+    let mut res = vec![];
+    let mut offset = 0;
+    for i in 0..s.len() {
+        if s.as_bytes()[i] == *ch as u8 {
+            if i > 0 && s.as_bytes()[i - 1] == b'\\' {
+                continue;
+            }
+            res.push(&s[offset..i]);
+            offset = i + 1;
+        }
+    }
+    res.push(&s[offset..]);
+    res
+}
+
+fn convert_to_kv(s: &str, delim: &str) -> HashMap<String, String> {
+    let kv = s.splitn(2, delim).collect::<Vec<&str>>();
+    HashMap::from([(kv[0].trim().to_lowercase(), kv[1].trim().to_string())])
 }
 
 /// Quick dirty way to check and see if a given string could be a datetime str
