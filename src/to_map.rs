@@ -19,7 +19,7 @@ struct LeefLine {
     leef_event_attributes: String,
 }
 
-/// A Simple CEF Parser to a Standardised HashMap
+/// A Simple LEEF Parser to a Standardised HashMap
 pub trait LeefToHashMap {
     /// Converts a LEEF &str or String into a HashMap.
     /// Also accepts syslog strings.
@@ -33,8 +33,8 @@ pub trait LeefToHashMap {
     /// ```rust
     /// use leef2hashmap::LeefToHashMap;
     ///
-    /// let cef_str = "LEEF:1.0|Vendor|Product|20.0.560|600|User Signed In|3|src=127.0.0.1 suser=Admin";
-    /// assert!(cef_str.to_hashmap(true).is_ok())
+    /// let leef_str = "LEEF:1.0|Vendor|Product|20.0.560|600|User Signed In|3|src=127.0.0.1 suser=Admin";
+    /// assert!(leef_str.to_hashmap(true).is_ok())
     /// ```
     fn to_hashmap(&self, preserve_orig: bool) -> Result<HashMap<String, String>>;
 }
@@ -73,6 +73,7 @@ fn leef_to_map(leef_str: &str, preserve_orig: bool) -> Result<HashMap<String, St
         // syslog priority available
         map.insert("syslog_priority".to_string(), pri);
     }
+
     if !parsed.leef_event_attributes.is_empty() {
         // get the leef event attributes
         if let Some(delim) = parsed.leef_header.get("delimiter") {
@@ -95,7 +96,7 @@ fn leef_to_map(leef_str: &str, preserve_orig: bool) -> Result<HashMap<String, St
     Ok(map)
 }
 
-/// Parse the given cef string to a struct of fields
+/// Parse the given leef string to a struct of fields
 /// which will further be used for forming the map with ease
 fn parse_leef_line(s: &str) -> Result<LeefLine> {
     if !s.to_lowercase().contains("leef:0|")
@@ -107,7 +108,7 @@ fn parse_leef_line(s: &str) -> Result<LeefLine> {
         return Err(Error::NotLeef);
     }
     if s.matches('|').count().lt(&5) {
-        // Malformed CEF as the header is not complete
+        // Malformed LEEF as the header is not complete
         return Err(Error::MalformedLeef);
     }
 
@@ -136,7 +137,7 @@ fn parse_leef_line(s: &str) -> Result<LeefLine> {
 
     println!("header: {:?}", res);
 
-    // form the cef extension
+    // form the leef event attributes
     res.leef_event_attributes = arr
         .last()
         .unwrap()
