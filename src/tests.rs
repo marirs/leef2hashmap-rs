@@ -235,16 +235,3 @@ fn test_leef_headers_exist() {
     assert!(x.get("deviceVersion").is_some());
     assert!(x.get("eventId").is_some());
 }
-
-#[test]
-fn test_leef_headers_with_delim_exist() {
-    let s = "<134>LEEF:2.0|Microsoft|MSExchange|2013|Logon Failure|x5e|";
-    let x = s.to_hashmap(false);
-    assert!(x.is_ok());
-    let x = x.unwrap();
-    assert!(x.get("deviceVendor").is_some());
-    assert!(x.get("deviceProduct").is_some());
-    assert!(x.get("deviceVersion").is_some());
-    assert!(x.get("eventId").is_some());
-    assert!(x.get("delimiter").is_some());
-}
