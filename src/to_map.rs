@@ -13,7 +13,7 @@ const LEEF_HEADERS: [&str; 6] = [
 #[derive(Clone, Debug, Default)]
 struct LeefLine {
     syslog_facility: Option<String>,
-    syslog_priority: Option<String>,
+    syslog_severity: Option<String>,
     at: Option<String>,
     ahost: Option<String>,
     leef_header: HashMap<String, String>,
@@ -71,7 +71,7 @@ fn leef_to_map(leef_str: &str, preserve_orig: bool) -> Result<HashMap<String, St
         // syslog facility available
         map.insert("syslog_facility".to_string(), facility);
     }
-    if let Some(pri) = parsed.syslog_priority {
+    if let Some(pri) = parsed.syslog_severity {
         // syslog priority available
         map.insert("syslog_priority".to_string(), pri);
     }
@@ -152,14 +152,16 @@ fn parse_leef_line(s: &str) -> Result<LeefLine> {
     // 1) found key value in delimiter field
     if let Some(delim) = res.leef_header.get("delimiter") {
         if delim.contains('=') {
-            res.leef_header_event_attributes.extend(convert_to_kv(delim, "="));
+            res.leef_header_event_attributes
+                .extend(convert_to_kv(delim, "="));
             res.leef_header.remove("delimiter");
         }
     }
     // 2) found another extra field (non-standard leef) with key=value perhaps
     if let Some(extra) = res.leef_header.get("extra_field") {
         if extra.contains('=') {
-            res.leef_header_event_attributes.extend(convert_to_kv(extra, "="));
+            res.leef_header_event_attributes
+                .extend(convert_to_kv(extra, "="));
             res.leef_header.remove("extra_field");
         }
     }
@@ -167,15 +169,19 @@ fn parse_leef_line(s: &str) -> Result<LeefLine> {
     // we mostly have syslog information
     if arr.len().eq(&2) {
         let syslog_data = arr.first().unwrap().trim();
-        let data;
+        let mut data;
         // we might have syslog facility & priority to extract
         if syslog_data.starts_with('<') && syslog_data.contains('>') {
             let pri = &syslog_data[1..syslog_data.find('>').unwrap()];
             if let Ok(parsed) = pri.parse::<i16>() {
                 res.syslog_facility = Some((parsed >> 3).to_string());
-                res.syslog_priority = Some((parsed & 7).to_string());
+                res.syslog_severity = Some((parsed & 7).to_string());
             }
             data = &syslog_data[syslog_data.find('>').unwrap() + 1..];
+            if data.starts_with("1 ") {
+                // assuming that version is always "1" for RFC 5424
+                data = &data[2..];
+            }
         } else {
             // no syslog facility & priority
             data = syslog_data;
