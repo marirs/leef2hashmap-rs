@@ -83,8 +83,30 @@ fn test_host_and_human_datetime() {
 }
 
 #[test]
+fn test_host_and_human_datetime_rfc5424() {
+    let s =
+        "<134>1 Feb 14 19:04:54 TEST LEEF:2.0|Microsoft|MSExchange|2013|Logon Failure|src=127.0.0.1 ";
+    let x = s.to_hashmap(false);
+    assert!(x.is_ok());
+    let x = x.unwrap();
+    println!("{:?}", x);
+    assert!(x.get("ahost").is_some());
+    assert!(x.get("at").is_some());
+}
+
+#[test]
 fn test_only_datetime() {
     let s = "<134>2022-02-14T03:17:30-08:00 LEEF:2.0|Microsoft|MSExchange|2013|Logon Failure|src=127.0.0.1 ";
+    let x = s.to_hashmap(false);
+    assert!(x.is_ok());
+    let x = x.unwrap();
+    assert!(x.get("at").is_some());
+    assert!(x.get("ahost").is_none());
+}
+
+#[test]
+fn test_only_datetime_rfc5424() {
+    let s = "<134>1 2022-02-14T03:17:30-08:00 LEEF:2.0|Microsoft|MSExchange|2013|Logon Failure|src=127.0.0.1 ";
     let x = s.to_hashmap(false);
     assert!(x.is_ok());
     let x = x.unwrap();
