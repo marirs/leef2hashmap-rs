@@ -1,7 +1,7 @@
 [package]
 name = "leef2hashmap"
 description = "A Simple LEEF Parser to a HashMap"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Marirs <marirs@gmail.com>"]
 keywords = ["leef", "json", "event"]
 categories = ["parsing"]
